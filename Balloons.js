@@ -85,17 +85,11 @@ var Target = {
 					if(((i-this.position[0])^2 + distance^2) <= balloonCoverage^2){
 						this.adjacents[(i + balloonCoverage)*(balloonCoverage*2) + (j + balloonCoverage)] = new Array(2);
 						var pos1 = this.position[0] +i;
-						//if(pos1 < 0){
-						//	pos1 = this.worldWidth + pos1;
-						//}
 						
 						this.adjacents[(i + balloonCoverage)*(balloonCoverage*2) + (j + balloonCoverage)] = [pos1,this.position[1] + j];
 					} 
 				}
 			}
-			//this.adjacents.forEach(function(el){
-			//	console.log('adj ' +el);
-			//});
 			
 			var tempAdjacents = new Array();
 			var that = this;
@@ -105,9 +99,6 @@ var Target = {
 						return true;
 					}
 				});
-			//tempAdjacents.forEach(function(el){
-			//	console.log('adjT1 ' +el);
-			//});
 			
 			
 			var tempAdjacents2 = tempAdjacents.map(function(point){
@@ -117,16 +108,9 @@ var Target = {
 					return [point[0],point[1]];
 				}
 			});
-			//tempAdjacents2.forEach(function(el){
-			//	console.log('adjT2 ' +el);
-			//});
 			
 			
 			this.adjacents = tempAdjacents2;
-			//console.log("ADJACENTS FINAL:");
-			//this.adjacents.forEach(function(adj){
-			//	console.log(adj);
-			//});
 		}
 }
 
@@ -158,11 +142,7 @@ var DistanceRanker = {
 		rankingTable.sort(function(a,b){
 			return a.distance - b.distance;
 		})
-		
-		//console.log('Ranking Table:');
-		//rankingTable.forEach(function (rank){
-		//	console.log(rank);
-		//})
+
 		return rankingTable;
 	},
 	getLowerDistance: function(balloonPosition, targetPositions, originalTarget){
@@ -215,11 +195,9 @@ var Utilities = {
 		}
 		
 		if(distanceRight < distanceLeft){
-			//console.log('returning dr');
 			return distanceRight;
 		}
 		else{
-			//console.log('returning dl');
 			return distanceLeft;
 		}
 	},
@@ -328,10 +306,7 @@ var Manager = {
 	assignTargets: function(isFirstTime){
 		if(isFirstTime){
 			for(var i=0;i<this.balloons.length;i++){
-				//console.log(' ranktable '+ this.rankedBalloons[i].rankTable[i].target + " distance " + this.rankedBalloons[i].rankTable[i].distance );
 				this.rankedBalloons[i].balloon.target = this.rankedBalloons[i].rankTable[i];
-				
-				//console.log('balloon: ' +this.rankedBalloons[i].balloon.position +  ' target: ' + this.rankedBalloons[i].balloon.target.target + 'vector:' + this.rankedBalloons[i].balloon.target.vector);
 			}
 		}
 	},
@@ -340,21 +315,20 @@ var Manager = {
 		var balloonsPositions = allBalloons.map(function(b){
 			return b.balloon.position;
 		});
-		var targetsCopy = this.targets;
+		var targetsCopy = this.targets.map(function(item){
+			return JSON.parse(JSON.stringify(item));
+		});
 		var countedTargetCount = targetsCopy.filter(function(t){ 
 			if(t.counted) 
 				return true; 
 			else 
 				return false;
 		}).length;
-		console.log('currentCountedTargets: ' + countedTargetCount);
+
 		for(var i=0;i<balloonsPositions.length;i++){
 			for(var j=0;j<targetsCopy.length;j++){
-				//console.log('tc.counted: ' + targetsCopy[j].counted);
 				if(!targetsCopy[j].counted && this.isInTarget(balloonsPositions[i],targetsCopy[j])){
-					//console.log('tc: ' + targetsCopy[j]);
 					result++;
-					console.log('currentCountResult: ' + result);
 					targetsCopy[j].counted = true;
 				}
 			}
@@ -362,7 +336,6 @@ var Manager = {
 		return result;
 	},
 	isInAnyOtherTarget: function(currentPosition, excludedTarget){
-		//console.log('inanyother ex tgt: ' + excludedTarget.target + 'tgt ' + this.targets[0].target.position );
 		var validTargets = this.targets.filter(function(target){
 			if(target.target.position == excludedTarget.target){
 				console.log('excluded is excluded');
@@ -405,8 +378,6 @@ var Manager = {
 	},
 	isInTarget: function(balloon, target){
 		var allGoodPositions = new Array();
-		//console.log('target before setting allGoodPositions: ');
-		//console.log(target);
 		allGoodPositions = (target.target.adjacents);
 		
 		for(var i=0; i<allGoodPositions.length; i++){
@@ -428,23 +399,14 @@ var Manager = {
 		var validity = [false,false,false];
 		var windArray = this.getWindArray(currentPosition,currentHeight);
 		if(currentHeight != 0){
-			
 			validity[1] = this.isAValidMove(currentPosition,windArray[1]);
-			
-			//console.log('current: ' + currentWind);
 		}
 		if(currentHeight > 1){
-			
 			validity[0] = this.isAValidMove(currentPosition,windArray[0]);
-						
-			//console.log('down: ' + downstairsWind);
 		}
 		
 		if(currentHeight != (this.heightCollection.length-1)){
-			
 			validity[2] = this.isAValidMove(currentPosition,windArray[2]);
-			
-			//console.log('up: ' + upstairsWind);
 		}
 
 		return validity;
@@ -463,16 +425,20 @@ var Manager = {
 
 		return [downstairsWind,currentWind,upstairsWind];
 	},
-	evaluateBestMove: function(currentPosition, currentHeight, target, depth, rankingCriteria){
+	evaluateBestMove: function(currentPosition, currentHeight, target, depth, rankingCriteria,isTest){
 		var result = 0;
-		
-		console.log('balloonPosition: ' + currentPosition);
-		console.log('targetPosition: ' + target.target);
-		
+		if(!isTest){
+			console.log('balloonPosition: ' + currentPosition);
+			console.log('targetPosition: ' + target.target);	
+		}
+
 		var validity = this.getValidityArray(currentPosition,currentHeight);
 		var windArray = this.getWindArray(currentPosition,currentHeight);
-		console.log('winds: [' +windArray[0] + '|' + windArray[1] + '|' + windArray[2]+']');
-		console.log('validMoves: ' +validity);
+		
+		if(!isTest){
+			console.log('winds: [' +windArray[0] + '|' + windArray[1] + '|' + windArray[2]+']');
+			console.log('validMoves: ' +validity);	
+		}
 		
 		var currentGain = undefined;
 		var downstairsGain = undefined;
@@ -512,7 +478,8 @@ var Manager = {
 			}
 		}
 
-		console.log("Gain vector: ["+downstairsRawPoints+"|"+currentRawPoints+"|"+upstairsRawPoints+"]");
+		if(!isTest)
+			console.log("Gain vector: ["+downstairsRawPoints+"|"+currentRawPoints+"|"+upstairsRawPoints+"]");
 
 		var bestGain = undefined;
 		var gainResult = undefined;
@@ -547,13 +514,13 @@ var Manager = {
 
 		var scored = this.isInTarget(gainResult.newPosition,this.getOriginalTarget(target)) || this.isInAnyOtherTarget(gainResult.newPosition,target);
 		var finalResult = {action: action, newPosition : gainResult.newPosition, newDistance : gainResult.newDistance, newHeight: currentHeight + gainResult.action, newVector: gainResult.newVector, scored: scored}
-		console.log('finalResult: ' + finalResult);
+		if(!isTest)
+			console.log('finalResult: ' + finalResult);
+		
 		return finalResult;
 		
 	},
 	forwardAnalisys: function(depth,currentPosition,currentHeight,target, rankingCriteria){
-
-		//console.log('fowan : ' + depth + ' ch '+ currentHeight + ' cp ' + currentPosition);
 		var TotalPoints = 0;
 		var CurrentPoints = 0;
 		var UpstairsPoints = 0;
@@ -597,8 +564,6 @@ var Manager = {
 						downstairsOtherTargetGain += (this.isInAnyOtherTarget(downstairsGain.newPosition,target)) ? rankingCriteria.scoredOtherMultiplier : 0;
 						otherTargetTotal += downstairsOtherTargetGain;
 
-						//console.log('all downstairsGains: ' + downstairsGain.gain + " " + downstairsTargetGain + " " + downstairsOtherTargetGain);
-
 					}
 					break;
 				case 1:
@@ -609,8 +574,6 @@ var Manager = {
 						targetTotal += currentTargetGain;
 						currentOtherTargetGain += (this.isInAnyOtherTarget(currentGain.newPosition,target)) ? rankingCriteria.scoredOtherMultiplier : 0;
 						otherTargetTotal += currentOtherTargetGain;
-
-						//console.log('all currentGains: ' + currentGain.gain + " " + currentTargetGain + " " + currentOtherTargetGain);
 					}
 					break;
 				case 2:
@@ -621,8 +584,6 @@ var Manager = {
 						targetTotal += upstairsTargetGain;
 						upstairsOtherTargetGain += (this.isInAnyOtherTarget(upstairsGain.newPosition,target)) ? rankingCriteria.scoredOtherMultiplier : 0;
 						otherTargetTotal += upstairsOtherTargetGain;
-
-						//console.log('all upstairsGains: ' + upstairsGain.gain + " " + upstairsTargetGain + " " + upstairsOtherTargetGain);
 					}
 						
 					break;
@@ -631,8 +592,6 @@ var Manager = {
 		
 		var bestBranch = -3;
 		if(rankingCriteria.evaluateOnlyBestBranch){
-			//console.log( ' before branchincriteria: ' 
-			//	+ currentGain.gain + " " + downstairsGain.gain + " " + upstairsGain.gain);
 
 			CurrentPoints = (validity[1] != undefined && validity[1]) ?  Math.floor(currentGain.gain * rankingCriteria.distanceMultiplier) + currentTargetGain + currentOtherTargetGain + ( validityPoints * rankingCriteria.validityMultiplier) : 0;
 			DownstairsPoints =(validity[0] != undefined && validity[0]) ? Math.floor(downstairsGain.gain * rankingCriteria.distanceMultiplier) + downstairsTargetGain + downstairsOtherTargetGain + ( validityPoints * rankingCriteria.validityMultiplier) : 0;
@@ -641,8 +600,6 @@ var Manager = {
 
 
 			TotalPoints = Math.max(CurrentPoints,Math.max(DownstairsPoints,UpstairsPoints));
-
-			//console.log('branchcriteria: ' + CurrentPoints +" " + DownstairsPoints + " " + UpstairsPoints+ " " + TotalPoints + " " );
 
 			if(TotalPoints == CurrentPoints){
 				bestBranch = 0;
@@ -674,7 +631,7 @@ var Manager = {
 		}else if (nextPosition[1] > (this.worldWidth - 1)){
 			nextPosition[1] = nextPosition[1] - (this.worldWidth - 1);
 		}
-		//console.log('nextPosition: ' + nextPosition);
+
 		var distanceHeight = Math.abs(nextPosition[0] - target.target[0]);
 		
 		var util = Object.create(Utilities);
@@ -696,45 +653,402 @@ var Manager = {
 			else
 				return true;
 	},
-	startSimulation: function(depth, rankingCriteria){
+	startSimulation: function(depth, rankingCriteria, criteriaSteps, tuningDepth){
 		console.log('---------STARTING SIMULATION---------');
 		var score = 0;
-		var balloonsCopy = this.rankedBalloons;
+		var balloonsCopy = this.rankedBalloons.map(function(item){
+			return JSON.parse(JSON.stringify(item));
+		});
 		for(var i=0;i<this.nTurns;i++){
 			console.log('--- TURN ' + i + '---');
-			for(var j = 0; j<balloonsCopy.length;j++){
-				console.log('-BALLOON ' + j + '-');
-				//console.log(this.rankedBalloons[j].balloon)
-				var moveData = this.evaluateBestMove(balloonsCopy[j].balloon.position,balloonsCopy[j].balloon.height,balloonsCopy[j].balloon.target,depth,rankingCriteria);
-				if(moveData.action == -3){
-					balloonsCopy.splice(j,1);
-					
-				}else{
-					//if(moveData.scored)
-					//	score++;
-					balloonsCopy[j].balloon.position = moveData.newPosition;
-					balloonsCopy[j].balloon.height = balloonsCopy[j].balloon.height + moveData.action;
-					balloonsCopy[j].balloon.target.target.vector = moveData.newVector;
-					balloonsCopy[j].balloon.target.target.distance = moveData.newDistance;
-					console.log('action: ' + moveData.action);
-					console.log('newHeight: ' + (balloonsCopy[j].balloon.height + moveData.action));
-					console.log('newPos:' + moveData.newPosition);
-					console.log('point: ' + moveData.scored);
-				}
+
+			if(tuningDepth > 0){
+				var tunedCriteria = this.tuneCriteria(balloonsCopy,depth,rankingCriteria,criteriaSteps,tuningDepth);
+				
+				console.log('Tuned Criteria for turn: ' + i);
+				console.log(tunedCriteria)
 			}
-			score += this.countPoints(balloonsCopy);
-			console.log('Partial score: ' + score);
-			console.log('Balloons remaining: ' + balloonsCopy.length);
+
+			var turnResult = (tuningDepth == 0) ? this.playTurn(balloonsCopy,depth,rankingCriteria, false) : this.playTurn(balloonsCopy,depth,tunedCriteria, false);
+			balloonsCopy = turnResult.balloonsCopy;
+			if(tuningDepth > 0)
+				rankingCriteria = tunedCriteria;
+
 			if(balloonsCopy.length == 0){
 				console.log('no more balloons, exiting');
 				break;
 			}
+			score += turnResult.partialScore;
+
+			console.log('Partial score: ' + score);
+			console.log('Balloons remaining: ' + balloonsCopy.length);
 		}
 		console.log('********** SCORE: ' + score + '*************');
 		console.log('-----------SIMULATION FINISHED------------');
 		return score;
+	},
+	playTurn: function(balloonsCopy,depth,rankingCriteria,isTest){
+		for(var j = 0; j<balloonsCopy.length;j++){
+				if(!isTest)
+					console.log('-BALLOON ' + j + '-');
+				//console.log(this.rankedBalloons[j].balloon)
+				var moveData = this.evaluateBestMove(balloonsCopy[j].balloon.position,balloonsCopy[j].balloon.height,balloonsCopy[j].balloon.target,depth,rankingCriteria,isTest);
+				if(moveData.action == -3){
+					balloonsCopy.splice(j,1);
+				}else{
+					balloonsCopy[j].balloon.position = moveData.newPosition;
+					balloonsCopy[j].balloon.height = balloonsCopy[j].balloon.height + moveData.action;
+					balloonsCopy[j].balloon.target.target.vector = moveData.newVector;
+					balloonsCopy[j].balloon.target.target.distance = moveData.newDistance;
+					if(!isTest){
+						console.log('action: ' + moveData.action);
+						console.log('newHeight: ' + (balloonsCopy[j].balloon.height + moveData.action));
+						console.log('newPos:' + moveData.newPosition);
+						console.log('point: ' + moveData.scored);	
+					}
+				}
+			}
+			var partialScore = this.countPoints(balloonsCopy);
+
+			return{partialScore: partialScore, balloonsCopy: balloonsCopy};
+	},
+	getGradients: function(){
+		var allGradients = [];
+
+		allGradients.push([0,0,0,0,0]);
+		allGradients.push([0,0,0,0,1]);
+		allGradients.push([0,0,0,0,-1]);
+
+		allGradients.push([0,0,0,1,0]);
+		allGradients.push([0,0,0,-1,0]);
+
+		allGradients.push([0,0,0,1,1]);
+		allGradients.push([0,0,0,1,-1]);
+		allGradients.push([0,0,0,-1,1]);
+		allGradients.push([0,0,0,-1,-1]);
+
+		allGradients.push([0,0,1,0,0]);
+		allGradients.push([0,0,-1,0,0]);
+		
+		allGradients.push([0,0,1,0,1]);
+		allGradients.push([0,0,1,0,-1]);
+		allGradients.push([0,0,-1,0,1]);
+		allGradients.push([0,0,-1,0,-1]);
+		
+		allGradients.push([0,0,1,1,0]);
+		allGradients.push([0,0,1,-1,0]);
+		allGradients.push([0,0,-1,1,0]);
+		allGradients.push([0,0,-1,-1,0]);
+
+		allGradients.push([0,0,1,1,1]);
+		allGradients.push([0,0,1,1,-1]);
+		allGradients.push([0,0,1,-1,1]);
+		allGradients.push([0,0,1,-1,-1]);
+		allGradients.push([0,0,-1,1,1]);
+		allGradients.push([0,0,-1,1,-1]);
+		allGradients.push([0,0,-1,-1,1]);
+		allGradients.push([0,0,-1,-1,-1]);
+		
+		allGradients.push([0,1,0,0,0]);
+		allGradients.push([0,-1,0,0,0]);
+
+		allGradients.push([0,1,0,0,1]);
+		allGradients.push([0,1,0,0,-1]);
+		allGradients.push([0,-1,0,0,1]);
+		allGradients.push([0,-1,0,0,-1]);
+		
+		allGradients.push([0,1,0,1,0]);
+		allGradients.push([0,1,0,-1,0]);
+		allGradients.push([0,-1,0,1,0]);
+		allGradients.push([0,-1,0,-1,0]);
+
+		allGradients.push([0,1,0,1,1]);
+		allGradients.push([0,1,0,1,-1]);
+		allGradients.push([0,1,0,-1,1]);
+		allGradients.push([0,1,0,-1,-1]);
+		allGradients.push([0,-1,0,1,1]);
+		allGradients.push([0,-1,0,1,-1]);
+		allGradients.push([0,-1,0,-1,1]);
+		allGradients.push([0,-1,0,-1,-1]);
+
+		allGradients.push([0,1,1,0,0]);
+		allGradients.push([0,1,-1,0,0]);
+		allGradients.push([0,-1,1,0,0]);
+		allGradients.push([0,-1,-1,0,0]);
+
+		allGradients.push([0,1,1,0,1]);
+		allGradients.push([0,1,1,0,-1]);
+		allGradients.push([0,1,-1,0,1]);
+		allGradients.push([0,1,-1,0,-1]);
+		allGradients.push([0,-1,1,0,1]);
+		allGradients.push([0,-1,1,0,-1]);
+		allGradients.push([0,-1,-1,0,1]);
+		allGradients.push([0,-1,-1,0,-1]);
+
+		allGradients.push([0,1,1,1,0]);
+		allGradients.push([0,1,1,-1,0]);
+		allGradients.push([0,1,-1,1,0]);
+		allGradients.push([0,1,-1,-1,0]);
+		allGradients.push([0,-1,1,1,0]);
+		allGradients.push([0,-1,1,-1,0]);
+		allGradients.push([0,-1,-1,1,0]);
+		allGradients.push([0,-1,-1,-1,0]);
+
+		allGradients.push([0,1,1,1,1]);
+		allGradients.push([0,1,1,1,-1]);
+		allGradients.push([0,1,1,-1,1]);
+		allGradients.push([0,1,1,-1,-1]);
+		allGradients.push([0,1,-1,1,1]);
+		allGradients.push([0,1,-1,1,-1]);
+		allGradients.push([0,1,-1,-1,1]);
+		allGradients.push([0,1,-1,-1,-1]);
+		allGradients.push([0,-1,1,1,1]);
+		allGradients.push([0,-1,1,1,-1]);
+		allGradients.push([0,-1,1,-1,1]);
+		allGradients.push([0,-1,1,-1,-1]);
+		allGradients.push([0,-1,-1,1,1]);
+		allGradients.push([0,-1,-1,1,-1]);
+		allGradients.push([0,-1,-1,-1,1]);
+		allGradients.push([0,-1,-1,-1,-1]);
+
+		//--------
+
+		allGradients.push([1,0,0,0,0]);
+		allGradients.push([1,0,0,0,1]);
+		allGradients.push([1,0,0,0,-1]);
+
+		allGradients.push([1,0,0,1,0]);
+		allGradients.push([1,0,0,-1,0]);
+
+		allGradients.push([1,0,0,1,1]);
+		allGradients.push([1,0,0,1,-1]);
+		allGradients.push([1,0,0,-1,1]);
+		allGradients.push([1,0,0,-1,-1]);
+
+		allGradients.push([1,0,1,0,0]);
+		allGradients.push([1,0,-1,0,0]);
+		
+		allGradients.push([1,0,1,0,1]);
+		allGradients.push([1,0,1,0,-1]);
+		allGradients.push([1,0,-1,0,1]);
+		allGradients.push([1,0,-1,0,-1]);
+		
+		allGradients.push([1,0,1,1,0]);
+		allGradients.push([1,0,1,-1,0]);
+		allGradients.push([1,0,-1,1,0]);
+		allGradients.push([1,0,-1,-1,0]);
+
+		allGradients.push([1,0,1,1,1]);
+		allGradients.push([1,0,1,1,-1]);
+		allGradients.push([1,0,1,-1,1]);
+		allGradients.push([1,0,1,-1,-1]);
+		allGradients.push([1,0,-1,1,1]);
+		allGradients.push([1,0,-1,1,-1]);
+		allGradients.push([1,0,-1,-1,1]);
+		allGradients.push([1,0,-1,-1,-1]);
+		
+		allGradients.push([1,1,0,0,0]);
+		allGradients.push([1,-1,0,0,0]);
+
+		allGradients.push([1,1,0,0,1]);
+		allGradients.push([1,1,0,0,-1]);
+		allGradients.push([1,-1,0,0,1]);
+		allGradients.push([1,-1,0,0,-1]);
+		
+		allGradients.push([1,1,0,1,0]);
+		allGradients.push([1,1,0,-1,0]);
+		allGradients.push([1,-1,0,1,0]);
+		allGradients.push([1,-1,0,-1,0]);
+
+		allGradients.push([1,1,0,1,1]);
+		allGradients.push([1,1,0,1,-1]);
+		allGradients.push([1,1,0,-1,1]);
+		allGradients.push([1,1,0,-1,-1]);
+		allGradients.push([1,-1,0,1,1]);
+		allGradients.push([1,-1,0,1,-1]);
+		allGradients.push([1,-1,0,-1,1]);
+		allGradients.push([1,-1,0,-1,-1]);
+
+		allGradients.push([1,1,1,0,0]);
+		allGradients.push([1,1,-1,0,0]);
+		allGradients.push([1,-1,1,0,0]);
+		allGradients.push([1,-1,-1,0,0]);
+
+		allGradients.push([1,1,1,0,1]);
+		allGradients.push([1,1,1,0,-1]);
+		allGradients.push([1,1,-1,0,1]);
+		allGradients.push([1,1,-1,0,-1]);
+		allGradients.push([1,-1,1,0,1]);
+		allGradients.push([1,-1,1,0,-1]);
+		allGradients.push([1,-1,-1,0,1]);
+		allGradients.push([1,-1,-1,0,-1]);
+
+		allGradients.push([1,1,1,1,0]);
+		allGradients.push([1,1,1,-1,0]);
+		allGradients.push([1,1,-1,1,0]);
+		allGradients.push([1,1,-1,-1,0]);
+		allGradients.push([1,-1,1,1,0]);
+		allGradients.push([1,-1,1,-1,0]);
+		allGradients.push([1,-1,-1,1,0]);
+		allGradients.push([1,-1,-1,-1,0]);
+
+		allGradients.push([1,1,1,1,1]);
+		allGradients.push([1,1,1,1,-1]);
+		allGradients.push([1,1,1,-1,1]);
+		allGradients.push([1,1,1,-1,-1]);
+		allGradients.push([1,1,-1,1,1]);
+		allGradients.push([1,1,-1,1,-1]);
+		allGradients.push([1,1,-1,-1,1]);
+		allGradients.push([1,1,-1,-1,-1]);
+		allGradients.push([1,-1,1,1,1]);
+		allGradients.push([1,-1,1,1,-1]);
+		allGradients.push([1,-1,1,-1,1]);
+		allGradients.push([1,-1,1,-1,-1]);
+		allGradients.push([1,-1,-1,1,1]);
+		allGradients.push([1,-1,-1,1,-1]);
+		allGradients.push([1,-1,-1,-1,1]);
+		allGradients.push([1,-1,-1,-1,-1]);
+
+		//---
+
+		allGradients.push([-1,0,0,0,0]);
+		allGradients.push([-1,0,0,0,1]);
+		allGradients.push([-1,0,0,0,-1]);
+
+		allGradients.push([-1,0,0,1,0]);
+		allGradients.push([-1,0,0,-1,0]);
+
+		allGradients.push([-1,0,0,1,1]);
+		allGradients.push([-1,0,0,1,-1]);
+		allGradients.push([-1,0,0,-1,1]);
+		allGradients.push([-1,0,0,-1,-1]);
+
+		allGradients.push([-1,0,1,0,0]);
+		allGradients.push([-1,0,-1,0,0]);
+		
+		allGradients.push([-1,0,1,0,1]);
+		allGradients.push([-1,0,1,0,-1]);
+		allGradients.push([-1,0,-1,0,1]);
+		allGradients.push([-1,0,-1,0,-1]);
+		
+		allGradients.push([-1,0,1,1,0]);
+		allGradients.push([-1,0,1,-1,0]);
+		allGradients.push([-1,0,-1,1,0]);
+		allGradients.push([-1,0,-1,-1,0]);
+
+		allGradients.push([-1,0,1,1,1]);
+		allGradients.push([-1,0,1,1,-1]);
+		allGradients.push([-1,0,1,-1,1]);
+		allGradients.push([-1,0,1,-1,-1]);
+		allGradients.push([-1,0,-1,1,1]);
+		allGradients.push([-1,0,-1,1,-1]);
+		allGradients.push([-1,0,-1,-1,1]);
+		allGradients.push([-1,0,-1,-1,-1]);
+		
+		allGradients.push([-1,1,0,0,0]);
+		allGradients.push([-1,-1,0,0,0]);
+
+		allGradients.push([-1,1,0,0,1]);
+		allGradients.push([-1,1,0,0,-1]);
+		allGradients.push([-1,-1,0,0,1]);
+		allGradients.push([-1,-1,0,0,-1]);
+		
+		allGradients.push([-1,1,0,1,0]);
+		allGradients.push([-1,1,0,-1,0]);
+		allGradients.push([-1,-1,0,1,0]);
+		allGradients.push([-1,-1,0,-1,0]);
+
+		allGradients.push([-1,1,0,1,1]);
+		allGradients.push([-1,1,0,1,-1]);
+		allGradients.push([-1,1,0,-1,1]);
+		allGradients.push([-1,1,0,-1,-1]);
+		allGradients.push([-1,-1,0,1,1]);
+		allGradients.push([-1,-1,0,1,-1]);
+		allGradients.push([-1,-1,0,-1,1]);
+		allGradients.push([-1,-1,0,-1,-1]);
+
+		allGradients.push([-1,1,1,0,0]);
+		allGradients.push([-1,1,-1,0,0]);
+		allGradients.push([-1,-1,1,0,0]);
+		allGradients.push([-1,-1,-1,0,0]);
+
+		allGradients.push([-1,1,1,0,1]);
+		allGradients.push([-1,1,1,0,-1]);
+		allGradients.push([-1,1,-1,0,1]);
+		allGradients.push([-1,1,-1,0,-1]);
+		allGradients.push([-1,-1,1,0,1]);
+		allGradients.push([-1,-1,1,0,-1]);
+		allGradients.push([-1,-1,-1,0,1]);
+		allGradients.push([-1,-1,-1,0,-1]);
+
+		allGradients.push([-1,1,1,1,0]);
+		allGradients.push([-1,1,1,-1,0]);
+		allGradients.push([-1,1,-1,1,0]);
+		allGradients.push([-1,1,-1,-1,0]);
+		allGradients.push([-1,-1,1,1,0]);
+		allGradients.push([-1,-1,1,-1,0]);
+		allGradients.push([-1,-1,-1,1,0]);
+		allGradients.push([-1,-1,-1,-1,0]);
+
+		allGradients.push([-1,1,1,1,1]);
+		allGradients.push([-1,1,1,1,-1]);
+		allGradients.push([-1,1,1,-1,1]);
+		allGradients.push([-1,1,1,-1,-1]);
+		allGradients.push([-1,1,-1,1,1]);
+		allGradients.push([-1,1,-1,1,-1]);
+		allGradients.push([-1,1,-1,-1,1]);
+		allGradients.push([-1,1,-1,-1,-1]);
+		allGradients.push([-1,-1,1,1,1]);
+		allGradients.push([-1,-1,1,1,-1]);
+		allGradients.push([-1,-1,1,-1,1]);
+		allGradients.push([-1,-1,1,-1,-1]);
+		allGradients.push([-1,-1,-1,1,1]);
+		allGradients.push([-1,-1,-1,1,-1]);
+		allGradients.push([-1,-1,-1,-1,1]);
+		allGradients.push([-1,-1,-1,-1,-1]);
+		
+		return allGradients;
+	},
+	tuneCriteria: function(balloonsCopy,depth,rankingCriteria,criteriaSteps,tuningDepth){
+		console.log('--- TUNING START ---');
+		var allGradients = this.getGradients();
+		var foundSomething = false;
+
+		var resultCriteria = Object.create(RankingCriteria);
+		var currentBest = 0;
+		for(var j=1;j<tuningDepth+1;j++){
+			for(var i=0;i<allGradients.length;i++){
+				var currentBalloonCopy = balloonsCopy.map(function(item){
+					return JSON.parse(JSON.stringify(item));
+				});
+				var myTestCriteria = Object.create(RankingCriteria);
+				myTestCriteria = JSON.parse(JSON.stringify(rankingCriteria));
+
+				myTestCriteria.distanceMultiplier += allGradients[i][0] * (criteriaSteps.validityMultiplier * j);
+				myTestCriteria.scoredTargetMultiplier += allGradients[i][1] * (criteriaSteps.scoredTargetMultiplier * j);
+				myTestCriteria.scoredOtherMultiplier += allGradients[i][2] * (criteriaSteps.scoredOtherMultiplier * j);
+				myTestCriteria.distanceFirstMoveMultiplier += allGradients[i][3] * (criteriaSteps.distanceFirstMoveMultiplier * j);
+				myTestCriteria.scoredTargetFirstMove += allGradients[i][4] * (criteriaSteps.scoredTargetFirstMove * j);
+				myTestCriteria.scoredOtherFirstMove = myTestCriteria.scoredTargetFirstMove;
+
+				var testTurn = this.playTurn(currentBalloonCopy,depth,myTestCriteria,true);
+				console.log('testTurn: (gradient,depth) : score -> (' + i + ',' + j + ') : ' + testTurn.partialScore);
+				
+				if(currentBest < testTurn.partialScore){
+					currentBest = testTurn.partialScore;
+					resultCriteria = JSON.parse(JSON.stringify(myTestCriteria));
+					foundSomething = true;
+
+					console.log('better hitted');
+				}
+			}	
+		}
+		console.log('--- TUNING END ---');
+		console.log('Expected score:' + currentBest);
+		console.log('Tuned function: ');
+		console.log(resultCriteria);
+		return (foundSomething) ? resultCriteria : rankingCriteria;
 	}
-	
 }
 
 var Parser = {
@@ -761,11 +1075,11 @@ var RankingCriteria = {
 	evaluateOnlyBestBranch : false
 }
 
-var TURNS = 100;
+var TURNS = 50;;
 var BALLOONS = 10;
 var HEIGHTS = 10;
-var WORLD_HEIGHT = 200;
-var WORLD_WIDTH = 200;
+var WORLD_HEIGHT = 100;
+var WORLD_WIDTH = 100;
 var TARGETS = 20;
 var BALLOON_COVERAGE = 3;
 
@@ -781,38 +1095,64 @@ Ranking3.distanceFirstMoveMultiplier = 0.33;
 Ranking3.scoredTargetFirstMove = 500;
 Ranking3.scoredOtherFirstMove = 500;
 
-var score3 = WorldManager.startSimulation(4,Ranking3);
+//var score3 = WorldManager.startSimulation(4,Ranking3);
 
 Ranking3.evaluateOnlyBestBranch = true;
-var score8 = WorldManager.startSimulation(4,Ranking3);
 
-var Ranking2 = Object.create(RankingCriteria);
-Ranking2.validityMultiplier = 0;
-Ranking2.distanceMultiplier = 0.1;
-Ranking2.scoredTargetMultiplier = 0;
-Ranking2.scoredOtherMultiplier = 0;
-Ranking2.distanceFirstMoveMultiplier = 0.33;
-Ranking2.scoredTargetFirstMove = 0;
-Ranking2.scoredOtherFirstMove = 0;
+var Steps3 = Object.create(RankingCriteria);
+Steps3.validityMultiplier = 0;
+Steps3.distanceMultiplier = 0.30;
+Steps3.scoredTargetMultiplier = 50;
+Steps3.scoredOtherMultiplier = 50;
+Steps3.distanceFirstMoveMultiplier = 0.30;
+Steps3.scoredTargetFirstMove = 50;
+Steps3.scoredOtherFirstMove = 50;
 
+//var score3 = WorldManager.startSimulation(4,Ranking3);
+
+Ranking3.evaluateOnlyBestBranch = true;
+var scoreClassic = WorldManager.startSimulation(4,Ranking3,Steps3,0);
 WorldManager.resetBalloonPositions();
-var score2 = WorldManager.startSimulation(4,Ranking2);
-
-var Ranking1 = Object.create(RankingCriteria);
-Ranking1.validityMultiplier = 0;
-Ranking1.distanceMultiplier = 0;
-Ranking1.scoredTargetMultiplier = 50;
-Ranking1.scoredOtherMultiplier = 50;
-Ranking1.distanceFirstMoveMultiplier = 0;
-Ranking1.scoredTargetFirstMove = 500;
-Ranking1.scoredOtherFirstMove = 500;
-
-
+var score8 = WorldManager.startSimulation(4,Ranking3,Steps3,3);
 WorldManager.resetBalloonPositions();
-var score1 = WorldManager.startSimulation(4,Ranking1);
 
-Ranking1.evaluateOnlyBestBranch = true;
-var score7 = WorldManager.startSimulation(4,Ranking1); 
+Steps3.validityMultiplier = 0;
+Steps3.distanceMultiplier = 1;
+Steps3.scoredTargetMultiplier = 100;
+Steps3.scoredOtherMultiplier = 100;
+Steps3.distanceFirstMoveMultiplier = 1;
+Steps3.scoredTargetFirstMove = 150;
+Steps3.scoredOtherFirstMove = 150;
+
+
+var scoreBigSteps = WorldManager.startSimulation(4,Ranking3,Steps3,3);
+//var Ranking2 = Object.create(RankingCriteria);
+//Ranking2.validityMultiplier = 0;
+//Ranking2.distanceMultiplier = 0.1;
+//Ranking2.scoredTargetMultiplier = 0;
+//Ranking2.scoredOtherMultiplier = 0;
+//Ranking2.distanceFirstMoveMultiplier = 0.33;
+//Ranking2.scoredTargetFirstMove = 0;
+//Ranking2.scoredOtherFirstMove = 0;
+
+//WorldManager.resetBalloonPositions();
+//var score2 = WorldManager.startSimulation(4,Ranking2);
+
+//var Ranking1 = Object.create(RankingCriteria);
+//Ranking1.validityMultiplier = 0;
+//Ranking1.distanceMultiplier = 0;
+//Ranking1.scoredTargetMultiplier = 50;
+//Ranking1.scoredOtherMultiplier = 50;
+//Ranking1.distanceFirstMoveMultiplier = 0;
+//Ranking1.scoredTargetFirstMove = 500;
+//Ranking1.scoredOtherFirstMove = 500;
+
+
+//WorldManager.resetBalloonPositions();
+//var score1 = WorldManager.startSimulation(4,Ranking1);
+
+//Ranking1.evaluateOnlyBestBranch = true;
+//var score7 = WorldManager.startSimulation(4,Ranking1); 
 
 //WorldManager.resetBalloonPositions();
 //var score4 = WorldManager.startSimulation(5,Ranking1);
@@ -820,27 +1160,31 @@ var score7 = WorldManager.startSimulation(4,Ranking1);
 //WorldManager.resetBalloonPositions();
 //var score5 = WorldManager.startSimulation(6,Ranking1);
 
-WorldManager.resetBalloonPositions();
-var score6 = WorldManager.startSimulation(3,Ranking1);
+//WorldManager.resetBalloonPositions();
+//var score6 = WorldManager.startSimulation(3,Ranking1);
 
 
 
 
 
 console.log('--- SUMMARY ---');
-console.log('--- Criteria1: targets depth 4 ---');
-console.log('SCORE: ' +score1);
-console.log('--- Criteria2: only distance ---');
-console.log('SCORE: ' + score2);
-console.log('--- Criteria3: both ---');
-console.log('SCORE: ' + score3);
+//console.log('--- Criteria1: targets depth 4 ---');
+//console.log('SCORE: ' +score1);
+//console.log('--- Criteria2: only distance ---');
+//console.log('SCORE: ' + score2);
+//console.log('--- Criteria3: both ---');
+//console.log('SCORE: ' + score3);
 //console.log('--- Criteria4: targets depth 5 ---');
 //console.log('SCORE: ' + score4);
 //console.log('--- Criteria5: targets depth 6 ---');
 //console.log('SCORE: ' + score5);
-console.log('--- Criteria5: targets depth 3 ---');
-console.log('SCORE: ' + score6);
-console.log('--- Criteria 6: targets depth 4 onlybestbranch ---');
-console.log('SCORE: ' + score7);
-console.log('--- Criteria 7: both, onlybestbranch ---');
+//console.log('--- Criteria5: targets depth 3 ---');
+//console.log('SCORE: ' + score6);
+//console.log('--- Criteria 6: targets depth 4 onlybestbranch ---');
+//console.log('SCORE: ' + score7);
+console.log('--- Classic criteria : both, onlybestbranch ---');
+console.log('SCORE: ' + scoreClassic);
+console.log('--- Tuned Criteria : both, onlybestbranch ---');
 console.log('SCORE: ' + score8);
+console.log('--- Tuned Criteria : both, onlybestbranch, bigsteps ---');
+console.log('SCORE: ' + scoreBigSteps);
